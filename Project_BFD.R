@@ -50,6 +50,8 @@ library(caret)
 library(ts.extend)
 library(tseries)
 library(caTools)
+# Bass Models
+library(DIMORA)
 
 set.seed(50)
 ```
@@ -474,41 +476,39 @@ plotcorr(cor(data))
 
 ```{r}
 # compute VIFs
-library(car)
 
-model <- lm(GSPC~VIX+GNI+population+inflation+interest_rate+GDP) 
-GSPC_vs_all <- VIF(model)
-cat('GSPC:',GSPC_vs_all,'   ')
+model <- lm(data$GSPC~data$VIX+data$GNI+data$Population+data$Inflation+data$`Real interest rate`+data$GDP) 
+vif(model)
+```
 
+```{r}
+model <- lm(data$VIX~data$GSPC+data$GNI+data$Population+data$Inflation+data$`Real interest rate`+data$GDP)
+vif(model)
+```
 
-model <- lm(VIX~GSPC+GNI+population+inflation+interest_rate+GDP)
-VIX_vs_all <- VIF(model)
-cat('VIX:', VIX_vs_all,'   ')
+```{r}
+model <- lm(data$GNI~data$GSPC+data$VIX+data$Population+data$Inflation+data$`Real interest rate`+data$GDP)
+vif(model)
+```
 
+```{r}
+model <- lm(data$Population~data$GSPC+data$VIX+data$GNI+data$Inflation+data$`Real interest rate`+data$GDP)
+vif(model)
+```
 
-model <- lm(GNI~GSPC+VIX+population+inflation+interest_rate+GDP)
-GNI_vs_all <- VIF(model)
-cat('GNI:', GNI_vs_all,'   ')
+```{r}
+model <- lm(data$Inflation~data$GSPC+data$VIX+data$GNI+data$Population+data$`Real interest rate`+data$GDP)
+vif(model)
+```
 
+```{r}
+model <- lm(data$`Real interest rate`~data$GSPC+data$VIX+data$GNI+data$Population+data$Inflation+data$GDP)
+vif(model)
+```
 
-model <- lm(population~GSPC+VIX+GNI+inflation+interest_rate+GDP)
-population_vs_all <- VIF(model)
-cat('population:', population_vs_all,'   ')
-
-
-model <- lm(inflation~GSPC+VIX+GNI+population+interest_rate+GDP)
-inflation_vs_all <- VIF(model)
-cat('inflation:', inflation_vs_all,'   ')
-
-
-model <- lm(interest_rate~GSPC+VIX+GNI+population+inflation+GDP)
-interest_rate_vs_all <- VIF(model)
-cat('interest_rate:', interest_rate_vs_all,'   ')
-
-
-model <- lm(GDP~GSPC+VIX+GNI+population+inflation+interest_rate)
-GPD_vs_all <- VIF(model)
-cat('GDP:', GPD_vs_all)
+```{r}
+model <- lm(data$GDP~data$GSPC+data$VIX+data$GNI+data$Population+data$Inflation+data$`Real interest rate`)
+vif(model)
 ```
 # From the results above we can notice we have a strong situation of multicollinearity.
 # We have that the highest values are the VIF values computed for GNI, population and GDP
@@ -517,29 +517,28 @@ cat('GDP:', GPD_vs_all)
 # Now we compute the VIFs without considering GNI, population and GDP predictors (i.e. those ones having the highest VIF values)
 
 ```{r}
-model <- lm(GSPC~VIX+inflation+interest_rate) 
-GSPC_vs_all <- VIF(model)
-cat('GSPC:',GSPC_vs_all,'   ')
+model <- lm(data$GSPC~data$VIX+data$Inflation+data$`Real interest rate`) 
+vif(model)
+```
+```{r}
+model <- lm(data$VIX~data$GSPC+data$Inflation+data$`Real interest rate`)
+vif(model)
+```
 
+```{r}
+model <- lm(data$Inflation~data$GSPC+data$VIX+data$`Real interest rate`)
+vif(model)
+```
 
-model <- lm(VIX~GSPC+inflation+interest_rate)
-VIX_vs_all <- VIF(model)
-cat('VIX:', VIX_vs_all,'   ')
-
-
-model <- lm(inflation~GSPC+VIX+interest_rate)
-inflation_vs_all <- VIF(model)
-cat('inflation:', inflation_vs_all,'   ')
-
-
-model <- lm(interest_rate~GSPC+VIX+inflation)
-interest_rate_vs_all <- VIF(model)
-cat('interest_rate:', interest_rate_vs_all,'   ')
+```{r}
+model <- lm(data$`Real interest rate`~data$GSPC+data$VIX+data$Inflation)
+vif(model)
 ```
 # in the cell above we obtain great results from VIFs
 # thus we are going to use only the following four predictors: GSPC, VIX, inflation, interest_rate
 # because all the others are redundant, due to strong correlation or very high VIF values
 # (btw, I know this is a repetition, but it is just to clarify)
+
 
 #Autoregressive model AR Inflation
 ```{r}
@@ -605,7 +604,7 @@ tsdisplay(GSPC)
 diff1<- diff(GSPC)
 tsdisplay(diff1)
 
-####we fit the first Arima model 
+####we fit the first Arima model  
 a1<- Arima(GSPC, order=c(1,0,1), seasonal=c(0,0,1))
 fit1<- fitted(a1)
 
@@ -654,7 +653,7 @@ fitted(armax2)
 plot(GSPC, type='l')
 lines(fitted(armax2), col=2)
 AIC(armax2)
-AIC(arima1)
+AIC(armax1)
 ```
 ```{r}
 armax3<- auto.arima(GSPC, xreg=VIX)
@@ -668,7 +667,7 @@ lines(fitted(armax3), col=2)
 ```{r}
 AIC(armax3)
 AIC(armax2)
-AIC(arima1)
+AIC(armax1)
 ```
 #doesnt work the tslm
 
@@ -863,3 +862,103 @@ cv_model$evaluation_log %>%
 ```
 #The graph between predicted values is missing
 
+
+
+
+# Bass Model, GGM
+```{r}
+# implement a simple Bass Model
+bass1 <- BM(data$GSPC, display=T)
+```
+
+```{r}
+# see the results of the simple BM
+summary(bass1)
+```
+
+```{r}
+###prediction using simple BM (out-of-sample)
+pred_bass1 <- predict(bass1, newx=c(1:50))
+pred.inst.bm1 <- make.instantaneous(pred_bass1)
+```
+
+```{r}
+###plot of fitted model 
+plot(data$GSPC, type= "b",xlab="Year", ylab="GSPC",  pch=16, lty=3, xaxt="n", cex=0.6)
+axis(1, at=c(1,10,19,28,32), labels=data$Year[c(1,10,19,28,32)])
+lines(pred.inst.bm1, lwd=2, col=2)
+```
+
+```{r}
+# implement a simple Bass Model using 80% of the observations
+bass2 <- BM(data$GSPC[1:26], display=T)
+```
+
+
+```{r}
+# see the results of the BM2
+summary(bass2)
+```
+
+```{r}
+###prediction using BM 2 (out-of-sample)
+pred_bass2 <- predict(bass2, newx=c(1:50))
+pred.inst.bm2 <- make.instantaneous(pred_bass2)
+```
+
+```{r}
+###plot of fitted model 
+plot(data$GSPC[1:24], type= "b",xlab="Year", ylab="GSPC",  pch=16, lty=3, xaxt="n", cex=0.6)
+axis(1, at=c(1,5,10,17,24), labels=data$Year[c(1,5,10,17,24)])
+lines(pred.inst.bm1, lwd=2, col=2)
+```
+
+```{r}
+###Comparison between models (instantaneous)
+plot(data$GSPC, type= "b",xlab="Year", ylab="GSPC",  pch=16, lty=3, xaxt="n", cex=0.6)
+axis(1, at=c(1,5,10,17,24,32), labels=data$Year[c(1,5,10,17,24,32)])
+lines(pred.inst.bm1, lwd=2, col=2)
+lines(pred.inst.bm2, lwd=2, col=3)
+```
+```{r}
+###Comparison between models (cumulative)
+plot(cumsum(data$GSPC), type= "b",xlab="Year", ylab="GSPC",  pch=16, lty=3, xaxt="n", cex=0.6)
+axis(1, at=c(1,5,10,17,24,32), labels=data$Year[c(1,5,10,17,24,32)])
+lines(pred_bass1, lwd=2, col=2)
+lines(pred_bass2, lwd=2, col=3)
+```
+
+# NO visible, possible shocks (exponential neither rectangular),
+# so let's directly implement GGM
+
+```{r}
+# implement a GGM considering prelimestimates=NULL
+# because of no visible shock
+ggm1 <- GGM(data$GSPC)
+```
+
+
+```{r}
+# see the results of GGM
+summary(ggm1)
+```
+
+```{r}
+pred_GGM<- predict(ggm1, newx=c(1:40))
+pred_GGM.inst<- make.instantaneous(pred_GGM)
+```
+
+```{r}
+plot(data$GSPC, type= "b",xlab="Year", ylab="GSPC",  pch=16, lty=3, xaxt="n", cex=0.6)
+axis(1, at=c(1,5,10,17,24,32), labels=data$Year[c(1,5,10,17,24,32)])
+lines(pred_GGM.inst, lwd=2, col=2)
+```
+
+```{r}
+###Comparison between models (instantaneous)
+plot(data$GSPC, type= "b",xlab="Year", ylab="GSPC",  pch=16, lty=3, xaxt="n", cex=0.6)
+axis(1, at=c(1,5,10,17,24,32), labels=data$Year[c(1,5,10,17,24,32)])
+lines(pred.inst.bm1, lwd=2, col=2)
+lines(pred.inst.bm2, lwd=2, col=3)
+lines(pred_GGM.inst, lwd=2, col=4)
+```
